@@ -161,8 +161,8 @@ const FEATURES = [
   },
 ];
 
-const DOWNLOAD_URL_ARM64 = 'https://github.com/Imane-Idrissi/self-reflection-app/releases/latest/download/Unblurry-0.1.0-arm64.dmg';
-const DOWNLOAD_URL_X64 = 'https://github.com/Imane-Idrissi/self-reflection-app/releases/latest/download/Unblurry-0.1.0-x64.dmg';
+const RELEASES_API = 'https://api.github.com/repos/Imane-Idrissi/self-reflection-app/releases/latest';
+const RELEASES_FALLBACK = 'https://github.com/Imane-Idrissi/self-reflection-app/releases/latest';
 
 function trackDownload(source: string, arch: string) {
   if (POSTHOG_KEY) {
@@ -180,7 +180,22 @@ export default function LandingPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [downloadSource, setDownloadSource] = useState('');
   const [showOsTooltip, setShowOsTooltip] = useState(false);
+  const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string } | null>(null);
   const isMacOS = getIsMacOS();
+
+  useEffect(() => {
+    fetch(RELEASES_API)
+      .then(res => res.json())
+      .then((data: { assets?: { name: string; browser_download_url: string }[] }) => {
+        const assets = data.assets || [];
+        const arm64 = assets.find(a => a.name.endsWith('-arm64.dmg'));
+        const x64 = assets.find(a => a.name.endsWith('.dmg') && !a.name.includes('arm64'));
+        if (arm64 && x64) {
+          setDownloadUrls({ arm64: arm64.browser_download_url, x64: x64.browser_download_url });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleDownloadClick = useCallback((source: string) => {
     if (!isMacOS) {
@@ -201,7 +216,12 @@ export default function LandingPage() {
 
   const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64') => {
     trackDownload(downloadSource, arch);
-    const url = arch === 'arm64' ? DOWNLOAD_URL_ARM64 : DOWNLOAD_URL_X64;
+    if (!downloadUrls) {
+      window.open(RELEASES_FALLBACK, '_blank');
+      handleCloseModal();
+      return;
+    }
+    const url = arch === 'arm64' ? downloadUrls.arm64 : downloadUrls.x64;
     const a = document.createElement('a');
     a.href = url;
     a.download = '';
@@ -209,7 +229,7 @@ export default function LandingPage() {
     a.click();
     document.body.removeChild(a);
     handleCloseModal();
-  }, [downloadSource, handleCloseModal]);
+  }, [downloadSource, downloadUrls, handleCloseModal]);
 
   useEffect(() => {
     if (!showDownloadModal) return;
