@@ -10,7 +10,7 @@ Generate an AI-powered behavioral analysis report when a session ends and displa
 
 1. The user confirms ending the session. `session:end` returns immediately with the session summary, and report generation starts in the background.
 2. The renderer receives the summary, shows the "generating report" screen with a calming animation, and begins polling `report:get` every 3 seconds.
-3. Meanwhile, the AI service reads all session data (intent, captures, feelings, session events), collapses captures into time spans, builds a prompt, and sends it to the Claude API.
+3. Meanwhile, the AI service reads all session data (intent, captures, feelings, session events), collapses captures into time spans, builds a prompt, and sends it to the Gemini API.
 4. **If status is `"generating"`:** continue showing the generating screen with animation.
 5. **If status is `"ready"`:** transition to the full report display.
 6. **If status is `"failed"`:** show an error message with a "Retry" button.
@@ -87,14 +87,14 @@ New responsibilities:
 - Collapse captures into time spans (group consecutive identical `window_title` + `app_name`)
 - Build a chronological timeline interleaving collapsed captures, feeling logs, and session events
 - Compute session duration metadata: total minutes, active minutes, paused minutes
-- Build the prompt (system prompt + session data) and send to Claude API
+- Build the prompt (system prompt + session data) and send to Gemini API
 - Parse the AI's JSON response into the three report sections
 - Store in the `reports` table
 - Update report status: `"generating"` → `"ready"` or `"failed"`
 
 **Prompt structure:**
 
-The prompt sent to Claude includes:
+The prompt sent to Gemini includes:
 1. **System prompt:** Defines the AI's role, analysis approach, and output format. The exact text is a dedicated prompt engineering task within this phase (see Decisions). Baseline intent: analyze the user's work session behavior relative to their stated intent, identify patterns, and suggest improvements.
 2. **Intent:** The user's confirmed final intent.
 3. **Session metadata:** Total active time, total paused time, number of feeling logs.

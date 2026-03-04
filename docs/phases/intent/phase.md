@@ -60,24 +60,24 @@ Allow the user to set a clear intent for their session. The intent is the founda
 
 ### AI Service
 
-The AI service does not make decisions — it builds prompts, sends them to the Claude API (the AI provider), and parses the response into structured data the app can use.
+The AI service does not make decisions — it builds prompts, sends them to the Gemini API (the AI provider), and parses the response into structured data the app can use.
 
 **Two AI calls in this phase:**
 
 **Call 1: Vagueness check**
-- AI service builds a prompt with the user's intent and sends it to Claude API
-- Claude decides if the intent is specific or vague, and if vague, generates up to 3 clarifying questions (enough to sharpen the intent, not so many that it feels like a form)
-- AI service parses Claude's response into structured JSON
+- AI service builds a prompt with the user's intent and sends it to Gemini API
+- Gemini decides if the intent is specific or vague, and if vague, generates up to 3 clarifying questions (enough to sharpen the intent, not so many that it feels like a form)
+- AI service parses Gemini's response into structured JSON
 
 **Call 2: Intent refinement** (only if vague)
-- AI service builds a prompt with the original intent + the user's answers to clarifying questions and sends it to Claude API
-- Claude generates a refined, more specific version of the intent
-- AI service parses Claude's response into structured JSON
+- AI service builds a prompt with the original intent + the user's answers to clarifying questions and sends it to Gemini API
+- Gemini generates a refined, more specific version of the intent
+- AI service parses Gemini's response into structured JSON
 
 **Decisions:**
 - No user identity is sent to the AI provider — just the intent text and answers
 - The AI service enforces structured JSON responses so the app can parse them reliably
-- If Claude's response can't be parsed, treat it as an API failure
+- If Gemini's response can't be parsed, treat it as an API failure
 
 **Expected response formats:**
 
