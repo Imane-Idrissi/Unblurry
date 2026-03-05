@@ -478,7 +478,7 @@ export default function App() {
       {updateVersion && (
         <button
           onClick={() => window.api.installUpdate()}
-          className="fixed bottom-md left-1/2 -translate-x-1/2 z-50 flex items-center gap-sm rounded-full border border-border bg-bg-elevated px-md py-sm shadow-lg transition-colors hover:bg-bg-secondary"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-sm rounded-full border border-border bg-bg-elevated px-md py-sm shadow-xl transition-colors hover:bg-bg-secondary"
         >
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-positive opacity-75" />
