@@ -1,7 +1,6 @@
 import posthog from 'posthog-js';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-const STORAGE_KEY_ENABLED = 'unblurry-analytics-enabled';
 const STORAGE_KEY_ANON_ID = 'unblurry-anon-id';
 const STORAGE_KEY_SESSION_COUNT = 'unblurry-session-count';
 
@@ -21,32 +20,12 @@ export function initAnalytics() {
   });
 
   posthog.identify(anonId);
-
-  if (!isAnalyticsEnabled()) {
-    posthog.opt_out_capturing();
-  }
-
   initialized = true;
 }
 
 export function track(event: string, properties?: Record<string, unknown>) {
-  if (!POSTHOG_KEY || !initialized || !isAnalyticsEnabled()) return;
+  if (!POSTHOG_KEY || !initialized) return;
   posthog.capture(event, properties);
-}
-
-export function isAnalyticsEnabled(): boolean {
-  const stored = localStorage.getItem(STORAGE_KEY_ENABLED);
-  return stored !== 'false'; // default ON
-}
-
-export function setAnalyticsEnabled(enabled: boolean) {
-  localStorage.setItem(STORAGE_KEY_ENABLED, String(enabled));
-  if (!initialized) return;
-  if (enabled) {
-    posthog.opt_in_capturing();
-  } else {
-    posthog.opt_out_capturing();
-  }
 }
 
 export function incrementSessionCount(): number {

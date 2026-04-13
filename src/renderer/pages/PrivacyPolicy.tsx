@@ -1,6 +1,6 @@
 import { UnblurryMark } from '../components/UnblurryLogo';
 
-const LAST_UPDATED = 'March 1, 2026';
+const LAST_UPDATED = 'April 13, 2026';
 
 export default function PrivacyPolicy() {
   return (
@@ -78,18 +78,19 @@ export default function PrivacyPolicy() {
               .
             </p>
 
-            <h3 className="mt-6 font-heading text-[17px] font-semibold text-text-primary">PostHog (landing page only)</h3>
+            <h3 className="mt-6 font-heading text-[17px] font-semibold text-text-primary">PostHog (anonymous analytics)</h3>
             <p className="mt-2">
-              Our website (the landing page you downloaded the app from) uses PostHog for anonymous analytics.
-              This tracking runs in <strong>cookieless mode</strong>, meaning:
+              Both the landing page and the desktop app use PostHog for anonymous usage analytics.
+              This tracking runs in <strong>cookieless mode</strong> with no autocapture, meaning:
             </p>
             <ul className="mt-2 list-disc pl-6 flex flex-col gap-2">
               <li>No cookies are placed on your browser.</li>
               <li>No personally identifiable information is collected.</li>
-              <li>We track page views, scroll depth, and download button clicks to understand how visitors use the landing page.</li>
+              <li>On the landing page, we track page views and download clicks.</li>
+              <li>In the desktop app, we track anonymous action counts only — for example, whether a session was started or a report was generated. <strong>No personal content is ever sent</strong>: no window titles, no feeling text, no intent text, no app names.</li>
             </ul>
             <p className="mt-2">
-              This analytics tracking does <strong>not</strong> exist inside the desktop app:only on the website.
+              All analytics data is hosted in the EU. A random anonymous ID is used to count unique users — it cannot be linked to your identity.
             </p>
           </section>
 
