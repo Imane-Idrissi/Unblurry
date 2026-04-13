@@ -27,9 +27,10 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="font-heading text-[20px] font-bold text-text-primary">Summary</h2>
             <p className="mt-3">
-              Unblurry is a desktop app that runs entirely on your computer. Your data stays on your machine.
-              We do not operate servers, we do not have accounts, and we do not collect personal information
-              from the app.
+              Unblurry is a desktop app that runs entirely on your computer. Your data — window titles, feeling
+              logs, intents, and reports — stays on your machine. We do not operate servers and we do not have
+              accounts. We collect anonymous usage statistics (action counts only, no personal content) to
+              improve the app, as described below.
             </p>
           </section>
 

@@ -422,7 +422,7 @@ export default function LandingPage() {
               {[
                 { icon: DatabaseIcon, title: 'Local SQLite database', desc: 'All captures, feelings, and reports stored on your disk. No cloud sync.' },
                 { icon: KeyIcon, title: 'Bring your own API key', desc: 'Your Gemini key, your billing. We never see or store it on any server.' },
-                { icon: UserOffIcon, title: 'No account needed', desc: 'No sign-up, no login, no tracking. Download and start using it.' },
+                { icon: UserOffIcon, title: 'No account needed', desc: 'No sign-up, no login, no accounts. Download and start using it.' },
               ].map((item, i) => (
                 <div key={i} className="rounded-lg p-5 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(75,138,255,0.3)' }}>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(75,138,255,0.15)', color: '#4B8AFF' }}>
