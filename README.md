@@ -1,3 +1,7 @@
+<p>
+  <img src="docs/icon.png" width="48" />
+</p>
+
 # Unblurry
 
 A privacy-focused desktop app that captures your window activity, collects voluntary feeling logs, and uses AI to generate behavioral analysis reports, helping you understand not just *what* you did, but *why*.

@@ -47,3 +47,4 @@ src/main/helpers/active-window
 !src/renderer/og-image.png
 !src/renderer/apple-touch-icon.png
 !src/renderer/public/screenshots/*.png
+!docs/icon.png
