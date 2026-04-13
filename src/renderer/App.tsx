@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
+import { initAnalytics, track, incrementSessionCount } from './analytics';
 import ThemeToggle from './components/ThemeToggle';
 import DashboardScreen from './screens/DashboardScreen';
 import ApiKeySetupScreen from './screens/ApiKeySetupScreen';
@@ -37,6 +38,8 @@ export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
+    initAnalytics();
+
     const initialize = async () => {
       try {
         const result = await window.api.sessionCheckStale();
@@ -86,6 +89,9 @@ export default function App() {
   const handleIntentSubmit = async (name: string, intent: string) => {
     setLoading(true);
     try {
+      const sessionNumber = incrementSessionCount();
+      track('session_started', { session_number: sessionNumber });
+
       const response = await window.api.sessionCreate({ name, intent });
 
       if (response.error) {
@@ -109,6 +115,7 @@ export default function App() {
           },
         });
       } else {
+        track('intent_judged_vague');
         setStep({
           type: 'clarification',
           sessionId: response.session_id,
@@ -207,6 +214,7 @@ export default function App() {
     }
 
     if (response.success) {
+      track('recording_started');
       const sr = step.type === 'setup' ? step.startRecording : undefined;
       const finalIntent = sr?.finalIntent || '';
       setStep({ type: 'preparing', sessionId, finalIntent });
@@ -238,10 +246,22 @@ export default function App() {
   };
 
   const handleSessionEnd = (summary: SessionSummary, sessionId: string) => {
+    track('session_ended', {
+      ended_by: 'user',
+      active_minutes: summary.active_minutes,
+      capture_count: summary.capture_count,
+      feeling_count: summary.feeling_count,
+    });
     setStep({ type: 'report-generating', sessionId, summary });
   };
 
   const handleAutoEnd = (summary: SessionSummary, sessionId: string) => {
+    track('session_ended', {
+      ended_by: 'auto',
+      active_minutes: summary.active_minutes,
+      capture_count: summary.capture_count,
+      feeling_count: summary.feeling_count,
+    });
     setStep({ type: 'report-generating', sessionId, summary });
   };
 
@@ -410,8 +430,14 @@ export default function App() {
         <ReportGeneratingScreen
           sessionId={step.sessionId}
           summary={step.summary}
-          onReady={() => setStep({ type: 'report-ready', sessionId: step.sessionId })}
-          onFailed={() => setStep({ type: 'report-failed', sessionId: step.sessionId, summary: step.summary })}
+          onReady={() => {
+            track('report_ready');
+            setStep({ type: 'report-ready', sessionId: step.sessionId });
+          }}
+          onFailed={() => {
+            track('report_failed');
+            setStep({ type: 'report-failed', sessionId: step.sessionId, summary: step.summary });
+          }}
         />
       );
 
@@ -433,6 +459,7 @@ export default function App() {
             setStep({ type: 'report-generating', sessionId: step.sessionId, summary: step.summary });
           }}
           onSkip={() => {
+            track('report_skipped');
             setStep({ type: 'report-skipped', sessionId: step.sessionId, summary: step.summary });
           }}
         />

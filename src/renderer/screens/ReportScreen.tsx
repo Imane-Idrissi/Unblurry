@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { track } from '../analytics';
 import type { ReportGetResponse, ReportPattern, ReportEvidence, Capture } from '../../shared/types';
 
 interface ReportScreenProps {
@@ -60,7 +61,11 @@ export default function ReportScreen({
     await new Promise((r) => setTimeout(r, 100));
     try {
       const result = await window.api.reportDownload();
-      if (result.error) console.error('PDF download failed:', result.error);
+      if (result.error) {
+        console.error('PDF download failed:', result.error);
+      } else {
+        track('report_pdf_downloaded');
+      }
     } finally {
       setPrintMode(false);
       setDownloading(false);
@@ -191,9 +196,10 @@ export default function ReportScreen({
                       pattern={pattern}
                       printMode={printMode}
                       evidenceCaptures={evidenceCaptures}
-                      onEvidenceClick={(evidence) =>
-                        setProofModal({ evidence, sessionId })
-                      }
+                      onEvidenceClick={(evidence) => {
+                        track('evidence_proof_opened');
+                        setProofModal({ evidence, sessionId });
+                      }}
                     />
                   ))}
                 </div>
@@ -310,7 +316,10 @@ function PatternCard({
         <div>
           {!printMode && (
             <button
-              onClick={() => setExpanded(!expanded)}
+              onClick={() => {
+                if (!expanded) track('pattern_expanded', { pattern_type: pattern.type });
+                setExpanded(!expanded);
+              }}
               className="flex items-center gap-xs text-small font-medium text-primary-500 hover:text-primary-600 transition-colors duration-[150ms]"
             >
               <svg
