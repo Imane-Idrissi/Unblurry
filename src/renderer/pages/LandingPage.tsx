@@ -7,7 +7,10 @@ const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 if (POSTHOG_KEY) {
   posthog.init(POSTHOG_KEY, {
     api_host: 'https://eu.i.posthog.com',
-    persistence: 'memory',
+    persistence: 'localStorage+cookie',
+    autocapture: true,
+    capture_pageview: true,
+    capture_pageleave: true,
   });
   posthog.register({ app: 'unblurry-landing' });
 }

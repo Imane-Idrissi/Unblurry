@@ -79,18 +79,23 @@ export default function PrivacyPolicy() {
               .
             </p>
 
-            <h3 className="mt-6 font-heading text-[17px] font-semibold text-text-primary">PostHog (anonymous analytics)</h3>
-            <p className="mt-2">
-              Both the landing page and the desktop app use PostHog for anonymous usage analytics.
-              This tracking runs in <strong>cookieless mode</strong> with no autocapture, meaning:
-            </p>
+            <h3 className="mt-6 font-heading text-[17px] font-semibold text-text-primary">PostHog (analytics)</h3>
+
+            <p className="mt-2"><strong>On the landing page</strong> (this website), we use PostHog with standard website analytics:</p>
             <ul className="mt-2 list-disc pl-6 flex flex-col gap-2">
-              <li>No cookies are placed on your browser.</li>
-              <li>No personally identifiable information is collected.</li>
-              <li>On the landing page, we track page views and download clicks.</li>
-              <li>In the desktop app, we track anonymous action counts only — for example, whether a session was started or a report was generated. <strong>No personal content is ever sent</strong>: no window titles, no feeling text, no intent text, no app names.</li>
+              <li>Page views, clicks, scroll depth, and visitor location (country level).</li>
+              <li>Session replay — anonymous recordings of how visitors interact with the page (mouse movements, clicks, scrolling). No passwords or sensitive input fields are recorded.</li>
+              <li>Cookies and localStorage are used to maintain sessions across page loads.</li>
             </ul>
-            <p className="mt-2">
+
+            <p className="mt-4"><strong>In the desktop app</strong>, analytics is minimal and cookieless:</p>
+            <ul className="mt-2 list-disc pl-6 flex flex-col gap-2">
+              <li>No cookies, no session replay, no autocapture.</li>
+              <li>We track anonymous action counts only — for example, whether a session was started or a report was generated.</li>
+              <li><strong>No personal content is ever sent</strong>: no window titles, no feeling text, no intent text, no app names.</li>
+            </ul>
+
+            <p className="mt-4">
               All analytics data is hosted in the EU. A random anonymous ID is used to count unique users — it cannot be linked to your identity.
             </p>
           </section>
