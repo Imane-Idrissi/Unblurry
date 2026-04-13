@@ -9,6 +9,7 @@ if (POSTHOG_KEY) {
     api_host: 'https://eu.i.posthog.com',
     persistence: 'memory',
   });
+  posthog.register({ app: 'unblurry-landing' });
 }
 
 function AppleIcon() {

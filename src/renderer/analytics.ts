@@ -20,6 +20,7 @@ export function initAnalytics() {
   });
 
   posthog.identify(anonId);
+  posthog.register({ app: 'unblurry-desktop' });
   initialized = true;
 }
 
