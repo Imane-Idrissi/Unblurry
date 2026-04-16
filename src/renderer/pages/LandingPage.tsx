@@ -179,13 +179,18 @@ function getIsMacOS() {
   return /Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad|iPod/.test(ua);
 }
 
+function getIsWindows() {
+  return /Windows/.test(navigator.userAgent);
+}
+
 export default function LandingPage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [downloadSource, setDownloadSource] = useState('');
   const [showOsTooltip, setShowOsTooltip] = useState(false);
-  const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string } | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string; winX64: string } | null>(null);
   const isMacOS = getIsMacOS();
+  const isWindows = getIsWindows();
 
   useEffect(() => {
     fetch(RELEASES_API)
@@ -194,15 +199,20 @@ export default function LandingPage() {
         const assets = data.assets || [];
         const arm64 = assets.find(a => a.name.endsWith('-arm64.dmg'));
         const x64 = assets.find(a => a.name.endsWith('.dmg') && !a.name.includes('arm64'));
-        if (arm64 && x64) {
-          setDownloadUrls({ arm64: arm64.browser_download_url, x64: x64.browser_download_url });
+        const winX64 = assets.find(a => a.name.endsWith('.exe'));
+        if ((arm64 && x64) || winX64) {
+          setDownloadUrls({
+            arm64: arm64?.browser_download_url || '',
+            x64: x64?.browser_download_url || '',
+            winX64: winX64?.browser_download_url || '',
+          });
         }
       })
       .catch(() => {});
   }, []);
 
   const handleDownloadClick = useCallback((source: string) => {
-    if (!isMacOS) {
+    if (!isMacOS && !isWindows) {
       setShowOsTooltip(true);
       setTimeout(() => setShowOsTooltip(false), 3000);
       return;
@@ -210,7 +220,7 @@ export default function LandingPage() {
     setDownloadSource(source);
     setTermsAccepted(false);
     setShowDownloadModal(true);
-  }, [isMacOS]);
+  }, [isMacOS, isWindows]);
 
   const handleCloseModal = useCallback(() => {
     setShowDownloadModal(false);
@@ -218,14 +228,21 @@ export default function LandingPage() {
     setDownloadSource('');
   }, []);
 
-  const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64') => {
+  const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64' | 'winX64') => {
     trackDownload(downloadSource, arch);
     if (!downloadUrls) {
       window.open(RELEASES_FALLBACK, '_blank');
       handleCloseModal();
       return;
     }
-    const url = arch === 'arm64' ? downloadUrls.arm64 : downloadUrls.x64;
+    const url = arch === 'winX64' ? downloadUrls.winX64
+      : arch === 'arm64' ? downloadUrls.arm64
+      : downloadUrls.x64;
+    if (!url) {
+      window.open(RELEASES_FALLBACK, '_blank');
+      handleCloseModal();
+      return;
+    }
     const a = document.createElement('a');
     a.href = url;
     a.download = '';
@@ -269,7 +286,7 @@ export default function LandingPage() {
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
           >
             <DownloadIcon />
-            <span className="hidden sm:inline">Download free for macOS</span>
+            <span className="hidden sm:inline">Download free</span>
             <span className="sm:hidden">Download</span>
           </button>
         </div>
@@ -283,8 +300,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center text-center">
             {/* Pill badge */}
             <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-50 px-4 py-1.5 text-[13px] font-medium text-primary-600">
-              <AppleIcon />
-              Available for macOS
+              Available for macOS & Windows
             </span>
 
             <h1
@@ -311,7 +327,7 @@ export default function LandingPage() {
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
               >
                 <DownloadIcon />
-                Download free for macOS
+                Download free
               </button>
               <a
                 href="#how-it-works"
@@ -453,7 +469,7 @@ export default function LandingPage() {
             Start understanding yourself better
           </h2>
           <p className="mx-auto mt-3 text-text-secondary" style={{ fontSize: 17, maxWidth: 520 }}>
-            Free to use. Bring your own Gemini API key. macOS only for now.
+            Free to use. Bring your own Gemini API key. Available for macOS and Windows.
           </p>
           <div className="mt-8">
             <button
@@ -464,10 +480,10 @@ export default function LandingPage() {
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
             >
               <DownloadIcon />
-              Download free for macOS
+              Download free
             </button>
           </div>
-          <p className="mt-4 text-[13px] text-text-tertiary">Requires macOS 12 or later</p>
+          <p className="mt-4 text-[13px] text-text-tertiary">macOS 12+ or Windows 10+</p>
         </div>
       </section>
 
@@ -514,16 +530,23 @@ export default function LandingPage() {
             </div>
 
             <div className="px-6 pb-6 pt-3">
-              {/* macOS notice */}
+              {/* Platform notice */}
               <div
                 className="rounded-lg px-4 py-3"
                 style={{ backgroundColor: 'var(--color-caution-bg)', border: '1px solid var(--color-caution)' }}
               >
-                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
-                  macOS may block Unblurry on first launch because it is not from the App Store.
-                  To open it: go to <strong>System Settings → Privacy & Security</strong>, scroll down,
-                  and click <strong>Open Anyway</strong> next to the Unblurry message.
-                </p>
+                {isMacOS ? (
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
+                    macOS may block Unblurry on first launch because it is not from the App Store.
+                    To open it: go to <strong>System Settings → Privacy & Security</strong>, scroll down,
+                    and click <strong>Open Anyway</strong> next to the Unblurry message.
+                  </p>
+                ) : (
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
+                    Windows may show a security warning because the app is not signed.
+                    Click <strong>More info</strong>, then <strong>Run anyway</strong> to proceed.
+                  </p>
+                )}
               </div>
 
               {/* Terms checkbox */}
@@ -550,34 +573,52 @@ export default function LandingPage() {
 
               {/* Download buttons */}
               <div className="mt-5 flex gap-3">
-                <button
-                  onClick={() => handleConfirmDownload('arm64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary-500 px-4 py-3 text-text-inverse shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-600)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-500)'; }}
-                >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    Apple Silicon
-                  </span>
-                  <span className="text-[12px] opacity-80">M1, M2, M3, M4</span>
-                </button>
-                <button
-                  onClick={() => handleConfirmDownload('x64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
-                >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    Intel
-                  </span>
-                  <span className="text-[12px] text-text-tertiary">2020 and earlier</span>
-                </button>
+                {isMacOS ? (
+                  <>
+                    <button
+                      onClick={() => handleConfirmDownload('arm64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary-500 px-4 py-3 text-text-inverse shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-600)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-500)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        Apple Silicon
+                      </span>
+                      <span className="text-[12px] opacity-80">M1, M2, M3, M4</span>
+                    </button>
+                    <button
+                      onClick={() => handleConfirmDownload('x64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        Intel
+                      </span>
+                      <span className="text-[12px] text-text-tertiary">2020 and earlier</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleConfirmDownload('winX64')}
+                    disabled={!termsAccepted}
+                    className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary-500 px-4 py-3 text-text-inverse shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ transition: 'var(--transition-fast)' }}
+                    onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-600)'; }}
+                    onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-500)'; }}
+                  >
+                    <span className="flex items-center gap-2 text-[14px] font-semibold">
+                      <DownloadIcon />
+                      Windows (64-bit)
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -592,7 +633,7 @@ export default function LandingPage() {
             style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
           >
             <p className="text-[14px] font-medium text-text-primary">
-              Unblurry is only available for macOS
+              Unblurry is available for macOS and Windows
             </p>
           </div>
         </div>

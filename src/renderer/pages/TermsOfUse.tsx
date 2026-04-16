@@ -35,7 +35,7 @@ export default function TermsOfUse() {
           <section>
             <h2 className="font-heading text-[20px] font-bold text-text-primary">What Unblurry is</h2>
             <p className="mt-3">
-              Unblurry is a free desktop application for macOS that helps you reflect on your work sessions.
+              Unblurry is a free desktop application for macOS and Windows that helps you reflect on your work sessions.
               It captures window titles, accepts voluntary feeling logs, and uses AI to generate behavioral
               analysis reports. All data is stored locally on your device.
             </p>
