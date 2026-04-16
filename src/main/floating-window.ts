@@ -47,7 +47,9 @@ export class FloatingWindowManager {
     });
 
     this.win.setAlwaysOnTop(true, 'screen-saver');
-    this.win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    if (process.platform === 'darwin') {
+      this.win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    }
     this.win.setFullScreenable(false);
 
     if (!app.isPackaged) {

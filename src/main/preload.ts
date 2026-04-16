@@ -33,6 +33,8 @@ import type {
 } from '../shared/types';
 
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform,
+
   apikeyCheck: (): Promise<ApiKeyCheckResponse> =>
     ipcRenderer.invoke('apikey:check'),
 

@@ -87,7 +87,7 @@ export default function ApiKeySetupScreen({ isChange, onComplete, onCancel }: Ap
           </h1>
           <p className="text-body leading-[1.6] text-text-secondary">
             Your key is encrypted and stored locally — it never leaves your device.
-            macOS may ask for your login password to securely store it.
+            Your system may ask for your password to securely store it.
           </p>
         </div>
 

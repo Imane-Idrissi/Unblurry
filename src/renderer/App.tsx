@@ -490,7 +490,9 @@ export default function App() {
   return (
     <>
       {/* Title bar drag region for macOS traffic lights */}
-      <div className="fixed top-0 left-0 right-0 h-[38px] drag-region z-40 border-b border-border/30 bg-bg-secondary/50 backdrop-blur-sm" />
+      {window.api.platform === 'darwin' && (
+        <div className="fixed top-0 left-0 right-0 h-[38px] drag-region z-40 border-b border-border/30 bg-bg-secondary/50 backdrop-blur-sm" />
+      )}
       {step.type !== 'loading' && step.type !== 'dashboard' && (
         <div className="fixed top-[44px] right-md z-50 no-drag">
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
