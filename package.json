@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "seed": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/.bin/tsx scripts/seed-test-data.ts",
     "seed:clear": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/.bin/tsx scripts/seed-test-data.ts --clear",
-    "dist": "npm run build && electron-builder --mac"
+    "dist": "npm run build && electron-builder"
   },
   "build": {
     "appId": "com.unblurry.app",
@@ -26,13 +26,8 @@
       "dist/**/*"
     ],
     "asarUnpack": [
-      "node_modules/better-sqlite3/**"
-    ],
-    "extraResources": [
-      {
-        "from": "src/main/helpers/active-window",
-        "to": "active-window"
-      }
+      "node_modules/better-sqlite3/**",
+      "node_modules/active-win/**"
     ],
     "publish": {
       "provider": "github",

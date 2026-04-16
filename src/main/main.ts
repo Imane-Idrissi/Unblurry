@@ -1,7 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, systemPreferences } from 'electron';
 import path from 'path';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { getDatabase, closeDatabase } from './database/db';
 import { SessionRepository } from './database/session-repository';
 import { SessionEventsRepository } from './database/session-events-repository';
@@ -36,26 +34,25 @@ function initServices() {
   const captureRepo = new CaptureRepository(db);
   const feelingRepo = new FeelingRepository(db);
 
-  const execFileAsync = promisify(execFile);
-  const helperBin = app.isPackaged
-    ? path.join(process.resourcesPath, 'active-window')
-    : path.join(__dirname, '..', '..', '..', 'src', 'main', 'helpers', 'active-window');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const activeWin = require('active-win');
 
   captureService = new CaptureService(
     captureRepo,
     async () => {
       try {
-        const { stdout } = await execFileAsync(helperBin);
-        const result = JSON.parse(stdout.trim());
-        if (!result.title && !result.owner?.name) return undefined;
+        const result = await activeWin({ accessibilityPermission: false, screenRecordingPermission: false });
+        if (!result || (!result.title && !result.owner?.name)) return undefined;
         return { title: result.title, owner: { name: result.owner.name } };
       } catch {
         return undefined;
       }
     },
     async () => {
-      const trusted = systemPreferences.isTrustedAccessibilityClient(false);
-      return trusted;
+      if (process.platform === 'darwin') {
+        return systemPreferences.isTrustedAccessibilityClient(false);
+      }
+      return true;
     },
   );
 
@@ -124,8 +121,10 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 14, y: 10 },
+    ...(process.platform === 'darwin' ? {
+      titleBarStyle: 'hiddenInset' as const,
+      trafficLightPosition: { x: 14, y: 10 },
+    } : {}),
     show: false,
   });
 
