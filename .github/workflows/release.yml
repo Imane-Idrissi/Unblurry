@@ -20,13 +20,37 @@ jobs:
 
       - run: npm ci
 
-      - name: Compile active-window helper
-        run: swiftc -O -o src/main/helpers/active-window src/main/helpers/active-window.swift -framework Cocoa
-
       - name: Build and publish
         run: npm run build && npx electron-builder --mac --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build and publish
+        run: npm run build && npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  finalize:
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Publish release
         run: gh release edit "${{ github.ref_name }}" --draft=false
