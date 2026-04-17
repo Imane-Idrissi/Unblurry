@@ -130,7 +130,7 @@ const STEPS = [
   {
     icon: MonitorIcon,
     title: 'Work normally',
-    description: 'Silent background capture records window titles only. No screenshots, no keystrokes.',
+    description: 'Silent background capture records window titles and app names only. No screenshots, no keystrokes.',
   },
   {
     icon: HeartIcon,

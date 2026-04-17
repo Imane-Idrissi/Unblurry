@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
               SQLite database:
             </p>
             <ul className="mt-3 list-disc pl-6 flex flex-col gap-2">
-              <li><strong>Window titles</strong>: the names of the windows you have open. No screenshots, no keystrokes, no screen recordings.</li>
+              <li><strong>Window titles and application names</strong>: the names of the windows you have open and which application they belong to (e.g., "Google Chrome"). No screenshots, no keystrokes, no screen recordings.</li>
               <li><strong>Feeling logs</strong>: voluntary notes you choose to write about your mood or energy during a session.</li>
               <li><strong>Session intents</strong>: the goals you set at the start of each session.</li>
               <li><strong>AI-generated reports</strong>: behavioral analysis generated from your session data.</li>
@@ -63,7 +63,7 @@ export default function PrivacyPolicy() {
             <p className="mt-2">
               When you generate a report, Unblurry sends your session data (window titles, feeling logs, and
               intent) to Google's Gemini API to produce the behavioral analysis. This happens using <strong>your
-              own API key</strong>:we never see or store your key on any server.
+              own API key</strong>: we never see or store your key on any server.
             </p>
             <p className="mt-2">
               This means Google processes your session data according to their own privacy policy. We encourage
