@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 import type { Capture, Feeling, SessionEvent, ParsedReport } from '../../shared/types';
 
-export const MODEL_FALLBACKS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+export const MODEL_FALLBACKS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
 
 export interface VaguenessResult {
   status: 'specific' | 'vague';
@@ -25,6 +25,18 @@ function isModelNotFoundError(error: unknown): boolean {
   return msg.includes('404') || msg.includes('not_found') || msg.includes('is not found');
 }
 
+function isTransientError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return msg.includes('429') || msg.includes('too many requests')
+    || msg.includes('503') || msg.includes('service unavailable')
+    || msg.includes('overloaded');
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class AiService {
   private model: GenerativeModel;
   private genai: GoogleGenerativeAI;
@@ -34,22 +46,37 @@ export class AiService {
     this.model = this.genai.getGenerativeModel({ model: MODEL_FALLBACKS[0] });
   }
 
+  private static readonly RETRY_DELAYS = [5000, 15000, 30000];
+
   private async generateWithFallback(prompt: string): Promise<string> {
     for (let i = 0; i < MODEL_FALLBACKS.length; i++) {
       const model = i === 0 ? this.model : this.genai.getGenerativeModel({ model: MODEL_FALLBACKS[i] });
-      try {
-        const result = await model.generateContent(prompt);
-        if (i > 0) {
-          this.model = model;
+
+      let lastError: unknown;
+      for (let attempt = 0; attempt <= AiService.RETRY_DELAYS.length; attempt++) {
+        try {
+          const result = await model.generateContent(prompt);
+          if (i > 0) {
+            this.model = model;
+          }
+          return result.response.text();
+        } catch (error) {
+          lastError = error;
+          if (isModelNotFoundError(error)) break;
+          if (isTransientError(error) && attempt < AiService.RETRY_DELAYS.length) {
+            console.warn(`Model ${MODEL_FALLBACKS[i]} returned transient error, retrying in ${AiService.RETRY_DELAYS[attempt] / 1000}s...`);
+            await sleep(AiService.RETRY_DELAYS[attempt]);
+            continue;
+          }
+          break;
         }
-        return result.response.text();
-      } catch (error) {
-        if (isModelNotFoundError(error) && i < MODEL_FALLBACKS.length - 1) {
-          console.warn(`Model ${MODEL_FALLBACKS[i]} not available, trying ${MODEL_FALLBACKS[i + 1]}`);
-          continue;
-        }
-        throw error;
       }
+
+      if (isModelNotFoundError(lastError) && i < MODEL_FALLBACKS.length - 1) {
+        console.warn(`Model ${MODEL_FALLBACKS[i]} not available, trying ${MODEL_FALLBACKS[i + 1]}`);
+        continue;
+      }
+      throw lastError;
     }
     throw new AiServiceError('All models unavailable');
   }
