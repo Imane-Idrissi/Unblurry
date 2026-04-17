@@ -30,8 +30,8 @@ export default function ApiKeySetupScreen({ isChange, onComplete, onCancel }: Ap
     setError('');
 
     const trimmed = key.trim();
-    if (!trimmed.startsWith('AIza')) {
-      setError('API keys start with "AIza". Please check your key and try again.');
+    if (trimmed.length < 20) {
+      setError('That key looks too short. Please paste your full API key.');
       setSaving(false);
       return;
     }
@@ -104,7 +104,7 @@ export default function ApiKeySetupScreen({ isChange, onComplete, onCancel }: Ap
               value={key}
               onChange={(e) => { setKey(e.target.value); setError(''); }}
               onKeyDown={handleKeyDown}
-              placeholder={isChange ? 'Paste new key...' : 'AIza...'}
+              placeholder="Paste your Gemini API key..."
               autoFocus
               className="w-full rounded-md border border-border bg-bg-elevated px-md py-[12px] pr-[48px] text-body font-mono leading-[1.6] text-text-primary placeholder:text-text-tertiary transition-colors duration-[150ms] ease-out focus:border-primary-500 focus:outline-none"
             />
