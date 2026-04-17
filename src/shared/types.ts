@@ -38,7 +38,7 @@ export interface Report {
   summary: string | null;
   patterns: string | null;
   suggestions: string | null;
-  status: 'generating' | 'ready' | 'failed';
+  status: 'generating' | 'ready' | 'failed' | 'quota_exhausted';
   created_at: string;
 }
 
@@ -193,7 +193,7 @@ export interface ReportGetRequest {
 }
 
 export interface ReportGetResponse {
-  status: 'generating' | 'ready' | 'failed';
+  status: 'generating' | 'ready' | 'failed' | 'quota_exhausted';
   report?: ParsedReport;
   session?: {
     name: string;
@@ -235,6 +235,7 @@ export interface DashboardSession {
   ended_at: string;
   duration_minutes: number;
   has_report: boolean;
+  report_status: 'none' | 'ready' | 'failed' | 'quota_exhausted';
 }
 
 export interface SessionDeleteRequest {

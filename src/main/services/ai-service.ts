@@ -13,10 +13,17 @@ export interface RefinementResult {
 }
 
 export class AiServiceError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(message: string, public readonly cause?: unknown, public readonly isQuota: boolean = false) {
     super(message);
     this.name = 'AiServiceError';
   }
+}
+
+export function isQuotaError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return msg.includes('429') || msg.includes('too many requests')
+    || msg.includes('quota') || msg.includes('resource_exhausted');
 }
 
 function isModelNotFoundError(error: unknown): boolean {
@@ -100,7 +107,8 @@ export class AiService {
       return await this.generateWithFallback(prompt);
     } catch (error) {
       if (error instanceof AiServiceError) throw error;
-      throw new AiServiceError('Failed to generate report', error);
+      const quota = isQuotaError(error);
+      throw new AiServiceError('Failed to generate report', error, quota);
     }
   }
 

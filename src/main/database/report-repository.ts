@@ -53,6 +53,21 @@ export class ReportRepository {
     ).run('failed', reportId);
   }
 
+  updateToQuotaExhausted(reportId: string): void {
+    this.db.prepare(
+      'UPDATE reports SET status = ? WHERE report_id = ?'
+    ).run('quota_exhausted', reportId);
+  }
+
+  getStatusForSession(sessionId: string): 'none' | 'ready' | 'failed' | 'quota_exhausted' {
+    const report = this.getBySessionId(sessionId);
+    if (!report) return 'none';
+    if (report.status === 'ready') return 'ready';
+    if (report.status === 'quota_exhausted') return 'quota_exhausted';
+    if (report.status === 'failed') return 'failed';
+    return 'none';
+  }
+
   resetToGenerating(reportId: string): void {
     this.db.prepare(
       'UPDATE reports SET status = ?, summary = NULL, patterns = NULL, suggestions = NULL WHERE report_id = ?'

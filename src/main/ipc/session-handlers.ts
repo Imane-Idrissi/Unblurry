@@ -342,6 +342,7 @@ export function registerSessionHandlers(
         ended_at: s.ended_at || s.created_at,
         duration_minutes: Math.round((endMs - startMs) / 60000),
         has_report: reportService.hasReport(s.session_id),
+        report_status: reportService.getReportStatus(s.session_id),
       };
     });
   });
