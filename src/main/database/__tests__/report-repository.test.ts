@@ -165,5 +165,63 @@ describe('ReportRepository', () => {
     it('returns 0 when no generating reports exist', () => {
       expect(repo.markStaleAsFailedOnLaunch()).toBe(0);
     });
+
+    it('does not convert quota_exhausted to failed', () => {
+      const report = repo.create('test-session');
+      repo.updateToQuotaExhausted(report.report_id);
+
+      const count = repo.markStaleAsFailedOnLaunch();
+      expect(count).toBe(0);
+
+      const found = repo.getBySessionId('test-session');
+      expect(found!.status).toBe('quota_exhausted');
+    });
+  });
+
+  describe('updateToQuotaExhausted', () => {
+    it('sets status to quota_exhausted', () => {
+      const report = repo.create('test-session');
+      repo.updateToQuotaExhausted(report.report_id);
+
+      const found = repo.getBySessionId('test-session');
+      expect(found!.status).toBe('quota_exhausted');
+    });
+  });
+
+  describe('getStatusForSession', () => {
+    it('returns none when no report exists', () => {
+      expect(repo.getStatusForSession('test-session')).toBe('none');
+    });
+
+    it('returns ready for a ready report', () => {
+      const report = repo.create('test-session');
+      repo.updateToReady(report.report_id, 'Summary', '[]', '[]');
+      expect(repo.getStatusForSession('test-session')).toBe('ready');
+    });
+
+    it('returns failed for a failed report', () => {
+      const report = repo.create('test-session');
+      repo.updateToFailed(report.report_id);
+      expect(repo.getStatusForSession('test-session')).toBe('failed');
+    });
+
+    it('returns quota_exhausted for a quota_exhausted report', () => {
+      const report = repo.create('test-session');
+      repo.updateToQuotaExhausted(report.report_id);
+      expect(repo.getStatusForSession('test-session')).toBe('quota_exhausted');
+    });
+
+    it('returns none for a generating report', () => {
+      repo.create('test-session');
+      expect(repo.getStatusForSession('test-session')).toBe('none');
+    });
+  });
+
+  describe('hasReportForSession', () => {
+    it('returns false for quota_exhausted report', () => {
+      const report = repo.create('test-session');
+      repo.updateToQuotaExhausted(report.report_id);
+      expect(repo.hasReportForSession('test-session')).toBe(false);
+    });
   });
 });

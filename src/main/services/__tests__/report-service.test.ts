@@ -5,7 +5,7 @@ import { SessionRepository } from '../../database/session-repository';
 import { CaptureRepository } from '../../database/capture-repository';
 import { FeelingRepository } from '../../database/feeling-repository';
 import { SessionEventsRepository } from '../../database/session-events-repository';
-import { AiService } from '../ai-service';
+import { AiService, AiServiceError } from '../ai-service';
 import { ReportService } from '../report-service';
 
 let db: Database.Database;
@@ -162,6 +162,20 @@ describe('ReportService', () => {
       });
     });
 
+    it('updates to quota_exhausted on quota error', async () => {
+      const sessionId = createEndedSession();
+      vi.spyOn(aiService, 'generateReport').mockRejectedValue(
+        new AiServiceError('Failed to generate report', new Error('429 Too Many Requests'), true),
+      );
+
+      reportService.startGeneration(sessionId);
+
+      await vi.waitFor(() => {
+        const report = reportRepo.getBySessionId(sessionId);
+        expect(report!.status).toBe('quota_exhausted');
+      });
+    });
+
     it('skips if ready report already exists', () => {
       const sessionId = createEndedSession();
       const report = reportRepo.create(sessionId);
@@ -220,6 +234,20 @@ describe('ReportService', () => {
       const result = reportService.getReport(sessionId);
       expect(result.status).toBe('generating');
     });
+
+    it('returns quota_exhausted status with session data', () => {
+      const sessionId = createEndedSession();
+      const report = reportRepo.create(sessionId);
+      reportRepo.updateToQuotaExhausted(report.report_id);
+
+      const result = reportService.getReport(sessionId);
+      expect(result.status).toBe('quota_exhausted');
+      expect(result.report).toBeUndefined();
+      expect(result.session).toBeDefined();
+      expect(result.session!.name).toBe('Login Page Work');
+      expect(result.session!.intent).toBe('Build the login page with React');
+      expect(result.session!.total_minutes).toBe(60);
+    });
   });
 
   describe('retryGeneration', () => {
@@ -248,6 +276,21 @@ describe('ReportService', () => {
     it('throws when no report exists', () => {
       const sessionId = createEndedSession();
       expect(() => reportService.retryGeneration(sessionId)).toThrow('No report found');
+    });
+
+    it('accepts quota_exhausted report for retry', async () => {
+      const sessionId = createEndedSession();
+      const report = reportRepo.create(sessionId);
+      reportRepo.updateToQuotaExhausted(report.report_id);
+
+      vi.spyOn(aiService, 'generateReport').mockResolvedValue(validAiResponse);
+
+      reportService.retryGeneration(sessionId);
+
+      await vi.waitFor(() => {
+        const updated = reportRepo.getBySessionId(sessionId);
+        expect(updated!.status).toBe('ready');
+      });
     });
   });
 
