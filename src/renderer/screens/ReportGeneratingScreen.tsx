@@ -6,6 +6,7 @@ interface ReportGeneratingScreenProps {
   summary: SessionSummary;
   onReady: () => void;
   onFailed: () => void;
+  onQuotaExhausted: () => void;
 }
 
 export default function ReportGeneratingScreen({
@@ -13,6 +14,7 @@ export default function ReportGeneratingScreen({
   summary,
   onReady,
   onFailed,
+  onQuotaExhausted,
 }: ReportGeneratingScreenProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -22,6 +24,8 @@ export default function ReportGeneratingScreen({
         const result = await window.api.reportGet({ session_id: sessionId });
         if (result.status === 'ready') {
           onReady();
+        } else if (result.status === 'quota_exhausted') {
+          onQuotaExhausted();
         } else if (result.status === 'failed') {
           onFailed();
         }
@@ -36,7 +40,7 @@ export default function ReportGeneratingScreen({
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [sessionId, onReady, onFailed]);
+  }, [sessionId, onReady, onFailed, onQuotaExhausted]);
 
   const formatDuration = (minutes: number) => {
     if (minutes < 1) return '<1 min';

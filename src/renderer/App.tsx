@@ -12,6 +12,7 @@ import ActiveSessionScreen from './screens/ActiveSessionScreen';
 import ReportGeneratingScreen from './screens/ReportGeneratingScreen';
 import ReportScreen from './screens/ReportScreen';
 import ReportFailedScreen from './screens/ReportFailedScreen';
+import ReportQuotaExhaustedScreen from './screens/ReportQuotaExhaustedScreen';
 import type { SessionSummary } from '../shared/types';
 
 type FlowStep =
@@ -28,6 +29,7 @@ type FlowStep =
   | { type: 'report-generating'; sessionId: string; summary: SessionSummary }
   | { type: 'report-ready'; sessionId: string }
   | { type: 'report-failed'; sessionId: string; summary: SessionSummary }
+  | { type: 'report-quota-exhausted'; sessionId: string; summary: SessionSummary }
   | { type: 'report-skipped'; sessionId: string; summary: SessionSummary }
   | { type: 'view-report'; sessionId: string };
 
@@ -438,6 +440,10 @@ export default function App() {
             track('report_failed');
             setStep({ type: 'report-failed', sessionId: step.sessionId, summary: step.summary });
           }}
+          onQuotaExhausted={() => {
+            track('report_quota_exhausted');
+            setStep({ type: 'report-quota-exhausted', sessionId: step.sessionId, summary: step.summary });
+          }}
         />
       );
 
@@ -462,6 +468,18 @@ export default function App() {
             track('report_skipped');
             setStep({ type: 'report-skipped', sessionId: step.sessionId, summary: step.summary });
           }}
+        />
+      );
+
+    case 'report-quota-exhausted':
+      return (
+        <ReportQuotaExhaustedScreen
+          summary={step.summary}
+          onRetry={async () => {
+            await window.api.reportRetry({ session_id: step.sessionId });
+            setStep({ type: 'report-generating', sessionId: step.sessionId, summary: step.summary });
+          }}
+          onDashboard={goToDashboard}
         />
       );
 

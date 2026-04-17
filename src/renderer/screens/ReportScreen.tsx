@@ -24,6 +24,7 @@ export default function ReportScreen({
   } | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [printMode, setPrintMode] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [evidenceCaptures, setEvidenceCaptures] = useState<Record<string, Capture[]>>({});
 
   const handleDownload = useCallback(async () => {
@@ -90,11 +91,31 @@ export default function ReportScreen({
     return `${h}h ${m}m`;
   };
 
+  const handleRetryQuota = async () => {
+    setRetrying(true);
+    try {
+      await window.api.reportRetry({ session_id: sessionId });
+      const poll = async () => {
+        const result = await window.api.reportGet({ session_id: sessionId });
+        if (result.status === 'ready' || result.status === 'failed' || result.status === 'quota_exhausted') {
+          setData(result);
+          setRetrying(false);
+        } else {
+          setTimeout(poll, 3000);
+        }
+      };
+      poll();
+    } catch {
+      setRetrying(false);
+    }
+  };
+
   const sessionData = skipped
     ? { name: '', intent: '', ...skippedSummary! }
     : data?.session;
 
   const report = skipped ? null : data?.report;
+  const isQuotaExhausted = !skipped && data?.status === 'quota_exhausted';
 
   return (
     <div className="min-h-screen bg-bg-primary">
@@ -171,6 +192,36 @@ export default function ReportScreen({
             </div>
           )}
         </section>
+
+        {/* Quota exhausted message */}
+        {isQuotaExhausted && (
+          <section className="mb-2xl">
+            <div className="rounded-lg border border-caution/30 bg-caution-bg px-lg py-lg shadow-sm">
+              <div className="flex items-start gap-md">
+                <div className="shrink-0 mt-[2px]">
+                  <svg className="h-5 w-5 text-caution" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-body font-medium text-text-primary mb-xs">
+                    Your API quota was exceeded
+                  </p>
+                  <p className="text-small leading-[1.6] text-text-secondary mb-md">
+                    Your session data is safely saved. You can generate the report when your quota resets.
+                  </p>
+                  <button
+                    onClick={handleRetryQuota}
+                    disabled={retrying}
+                    className="rounded-md bg-primary-500 px-lg py-sm text-small font-medium text-text-inverse shadow-sm transition-all duration-[150ms] ease-out hover:bg-primary-600 hover:shadow-md active:bg-primary-700 disabled:bg-primary-200 disabled:text-primary-600 disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    {retrying ? 'Generating...' : 'Generate Report'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Section 2: Behavioral Patterns */}
         {skipped ? (

@@ -286,9 +286,16 @@ function SessionCard({ session, onClick, onDelete }: { session: DashboardSession
     >
       <div className="h-8 w-1 rounded-full bg-primary-200 transition-colors duration-[150ms] group-hover:bg-primary-500" />
       <div className="flex-1 min-w-0">
-        <p className="text-body font-medium leading-[1.6] text-text-primary truncate">
-          {session.name}
-        </p>
+        <div className="flex items-center gap-sm">
+          <p className="text-body font-medium leading-[1.6] text-text-primary truncate">
+            {session.name}
+          </p>
+          {session.report_status === 'quota_exhausted' && (
+            <span className="shrink-0 inline-flex items-center rounded-sm bg-caution-bg px-sm py-[1px] text-caption font-medium text-caution">
+              Report pending
+            </span>
+          )}
+        </div>
         <p className="text-small leading-[1.5] text-text-tertiary mt-xs">
           {date}
         </p>
