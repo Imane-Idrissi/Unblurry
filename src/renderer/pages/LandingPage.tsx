@@ -183,14 +183,19 @@ function getIsWindows() {
   return /Windows/.test(navigator.userAgent);
 }
 
+function getIsLinux() {
+  return /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+}
+
 export default function LandingPage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [downloadSource, setDownloadSource] = useState('');
   const [showOsTooltip, setShowOsTooltip] = useState(false);
-  const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string; winX64: string } | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string; winX64: string; linuxX64: string } | null>(null);
   const isMacOS = getIsMacOS();
   const isWindows = getIsWindows();
+  const isLinux = getIsLinux();
 
   useEffect(() => {
     fetch(RELEASES_API)
@@ -200,11 +205,13 @@ export default function LandingPage() {
         const arm64 = assets.find(a => a.name.endsWith('-arm64.dmg'));
         const x64 = assets.find(a => a.name.endsWith('.dmg') && !a.name.includes('arm64'));
         const winX64 = assets.find(a => a.name.endsWith('.exe'));
-        if ((arm64 && x64) || winX64) {
+        const linuxX64 = assets.find(a => a.name.endsWith('.AppImage'));
+        if ((arm64 && x64) || winX64 || linuxX64) {
           setDownloadUrls({
             arm64: arm64?.browser_download_url || '',
             x64: x64?.browser_download_url || '',
             winX64: winX64?.browser_download_url || '',
+            linuxX64: linuxX64?.browser_download_url || '',
           });
         }
       })
@@ -223,7 +230,7 @@ export default function LandingPage() {
     setDownloadSource('');
   }, []);
 
-  const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64' | 'winX64') => {
+  const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64' | 'winX64' | 'linuxX64') => {
     trackDownload(downloadSource, arch);
     if (!downloadUrls) {
       window.open(RELEASES_FALLBACK, '_blank');
@@ -231,6 +238,7 @@ export default function LandingPage() {
       return;
     }
     const url = arch === 'winX64' ? downloadUrls.winX64
+      : arch === 'linuxX64' ? downloadUrls.linuxX64
       : arch === 'arm64' ? downloadUrls.arm64
       : downloadUrls.x64;
     if (!url) {
@@ -295,7 +303,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center text-center">
             {/* Pill badge */}
             <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-50 px-4 py-1.5 text-[13px] font-medium text-primary-600">
-              Available for macOS & Windows
+              Available for macOS, Windows & Linux
             </span>
 
             <h1
@@ -464,7 +472,7 @@ export default function LandingPage() {
             Start understanding yourself better
           </h2>
           <p className="mx-auto mt-3 text-text-secondary" style={{ fontSize: 17, maxWidth: 520 }}>
-            Free to use. Bring your own Gemini API key. Available for macOS and Windows.
+            Free to use. Bring your own Gemini API key. Available for macOS, Windows and Linux.
           </p>
           <div className="mt-8">
             <button
@@ -478,7 +486,7 @@ export default function LandingPage() {
               Download free
             </button>
           </div>
-          <p className="mt-4 text-[13px] text-text-tertiary">macOS 12+ or Windows 10+</p>
+          <p className="mt-4 text-[13px] text-text-tertiary">macOS 12+ / Windows 10+ / Linux (x64)</p>
         </div>
       </section>
 
@@ -617,6 +625,22 @@ export default function LandingPage() {
                   </span>
                 </button>
               </div>
+              <p className="mt-4 mb-2 text-[13px] font-semibold text-text-secondary">Linux</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleConfirmDownload('linuxX64')}
+                  disabled={!termsAccepted}
+                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
+                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
+                >
+                  <span className="flex items-center gap-2 text-[14px] font-semibold">
+                    <DownloadIcon />
+                    AppImage (64-bit)
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -630,7 +654,7 @@ export default function LandingPage() {
             style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
           >
             <p className="text-[14px] font-medium text-text-primary">
-              Unblurry is available for macOS and Windows
+              Unblurry is available for macOS, Windows and Linux
             </p>
           </div>
         </div>
