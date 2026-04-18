@@ -6,6 +6,8 @@
 
 A privacy-focused desktop app that captures your window activity, collects voluntary feeling logs, and uses AI to generate behavioral analysis reports, helping you understand not just *what* you did, but *why*.
 
+**[Download](https://www.unblurry.app)** — available for macOS, Windows and Linux.
+
 ## How It Works
 
 1. **Set your intent.** Tell the app what you plan to work on. The AI refines vague goals into specific ones.
@@ -26,6 +28,8 @@ A privacy-focused desktop app that captures your window activity, collects volun
 - **SQLite** via better-sqlite3
 - **Google Gemini API** (BYOK, Bring Your Own Key)
 
-## macOS Permissions
+## Platform Notes
 
-On first launch, macOS will ask for **Accessibility** permission. This is required for the app to read active window titles. The app does **not** record your screen, it only reads the window name and app name.
+- **macOS:** On first launch, macOS will ask for **Accessibility** permission. This is required to read active window titles. macOS may also block the app on first launch — go to **System Settings → Privacy & Security** and click **Open Anyway**.
+- **Windows:** Windows may show a SmartScreen warning. Click **More info**, then **Run anyway**.
+- **Linux:** Distributed as an AppImage (x64).
