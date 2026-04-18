@@ -301,7 +301,7 @@ export default function LandingPage() {
               <span className="font-heading text-[17px] font-bold text-text-primary">Unblurry</span>
             </span>
           <button
-            onClick={() => handleDownloadClick('navbar')}
+            onClick={() => handleDownloadClick('navbar', detectedPlatform)}
             className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-4 py-2 text-[13px] font-medium text-text-inverse"
             style={{ transition: 'var(--transition-fast)' }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-600)')}
