@@ -265,12 +265,7 @@ export default function LandingPage() {
       handleCloseModal();
       return;
     }
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.open(url, '_blank', 'noopener');
     handleCloseModal();
   }, [downloadSource, downloadUrls, handleCloseModal]);
 
