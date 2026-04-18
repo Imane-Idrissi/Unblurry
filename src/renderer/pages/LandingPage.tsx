@@ -15,14 +15,6 @@ if (POSTHOG_KEY) {
   posthog.register({ app: 'unblurry-landing' });
 }
 
-function AppleIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-    </svg>
-  );
-}
-
 function DownloadIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -187,15 +179,40 @@ function getIsLinux() {
   return /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
 }
 
+type DetectedPlatform = 'mac' | 'windows' | 'linux' | null;
+
+function getDetectedPlatform(): DetectedPlatform {
+  if (getIsMacOS()) return 'mac';
+  if (getIsWindows()) return 'windows';
+  if (getIsLinux()) return 'linux';
+  return null;
+}
+
+function getDownloadLabel(platform: DetectedPlatform): string {
+  switch (platform) {
+    case 'mac': return 'Download for macOS';
+    case 'windows': return 'Download for Windows';
+    case 'linux': return 'Download for Linux';
+    default: return 'Download free';
+  }
+}
+
+function getOtherPlatforms(platform: DetectedPlatform): string {
+  switch (platform) {
+    case 'mac': return 'Windows & Linux';
+    case 'windows': return 'macOS & Linux';
+    case 'linux': return 'macOS & Windows';
+    default: return '';
+  }
+}
+
 export default function LandingPage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [downloadSource, setDownloadSource] = useState('');
-  const [showOsTooltip, setShowOsTooltip] = useState(false);
+  const [platformFilter, setPlatformFilter] = useState<DetectedPlatform>(null);
   const [downloadUrls, setDownloadUrls] = useState<{ arm64: string; x64: string; winX64: string; linuxX64: string } | null>(null);
-  const isMacOS = getIsMacOS();
-  const isWindows = getIsWindows();
-  const isLinux = getIsLinux();
+  const detectedPlatform = getDetectedPlatform();
 
   useEffect(() => {
     fetch(RELEASES_API)
@@ -218,8 +235,9 @@ export default function LandingPage() {
       .catch(() => {});
   }, []);
 
-  const handleDownloadClick = useCallback((source: string) => {
+  const handleDownloadClick = useCallback((source: string, filter?: DetectedPlatform) => {
     setDownloadSource(source);
+    setPlatformFilter(filter ?? null);
     setTermsAccepted(false);
     setShowDownloadModal(true);
   }, []);
@@ -228,6 +246,7 @@ export default function LandingPage() {
     setShowDownloadModal(false);
     setTermsAccepted(false);
     setDownloadSource('');
+    setPlatformFilter(null);
   }, []);
 
   const handleConfirmDownload = useCallback((arch: 'arm64' | 'x64' | 'winX64' | 'linuxX64') => {
@@ -289,8 +308,7 @@ export default function LandingPage() {
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
           >
             <DownloadIcon />
-            <span className="hidden sm:inline">Download free</span>
-            <span className="sm:hidden">Download</span>
+            Download
           </button>
         </div>
       </nav>
@@ -301,11 +319,6 @@ export default function LandingPage() {
         <WaveBottomRight />
         <div className="relative mx-auto px-6" style={{ maxWidth: 1080 }}>
           <div className="flex flex-col items-center text-center">
-            {/* Pill badge */}
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-50 px-4 py-1.5 text-[13px] font-medium text-primary-600">
-              Available for macOS, Windows & Linux
-            </span>
-
             <h1
               className="font-heading font-bold text-text-primary"
               style={{ fontSize: 'clamp(32px, 5vw, 52px)', lineHeight: 1.15, maxWidth: 720 }}
@@ -323,14 +336,14 @@ export default function LandingPage() {
             {/* CTAs */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <button
-                onClick={() => handleDownloadClick('hero')}
+                onClick={() => handleDownloadClick('hero', detectedPlatform)}
                 className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-6 py-3 text-[15px] font-semibold text-text-inverse shadow-md"
                 style={{ transition: 'var(--transition-fast)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-600)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
               >
                 <DownloadIcon />
-                Download free
+                {getDownloadLabel(detectedPlatform)}
               </button>
               <a
                 href="#how-it-works"
@@ -346,6 +359,15 @@ export default function LandingPage() {
                 See how it works
               </a>
             </div>
+            {detectedPlatform && (
+              <button
+                onClick={() => handleDownloadClick('hero_other')}
+                className="mt-3 text-[14px] text-text-tertiary hover:text-primary-500"
+                style={{ transition: 'var(--transition-fast)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Also available for {getOtherPlatforms(detectedPlatform)}
+              </button>
+            )}
 
           </div>
         </div>
@@ -476,17 +498,27 @@ export default function LandingPage() {
           </p>
           <div className="mt-8">
             <button
-              onClick={() => handleDownloadClick('bottom_cta')}
+              onClick={() => handleDownloadClick('bottom_cta', detectedPlatform)}
               className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-7 py-3.5 text-[16px] font-semibold text-text-inverse shadow-md"
               style={{ transition: 'var(--transition-fast)' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-600)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-primary-500)')}
             >
               <DownloadIcon />
-              Download free
+              {getDownloadLabel(detectedPlatform)}
             </button>
           </div>
-          <p className="mt-4 text-[13px] text-text-tertiary">macOS 12+ / Windows 10+ / Linux (x64)</p>
+          {detectedPlatform ? (
+            <button
+              onClick={() => handleDownloadClick('bottom_cta_other')}
+              className="mt-4 text-[13px] text-text-tertiary hover:text-primary-500"
+              style={{ transition: 'var(--transition-fast)', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Also available for {getOtherPlatforms(detectedPlatform)}
+            </button>
+          ) : (
+            <p className="mt-4 text-[13px] text-text-tertiary">macOS, Windows & Linux</p>
+          )}
         </div>
       </section>
 
@@ -535,24 +567,28 @@ export default function LandingPage() {
             <div className="px-6 pb-6 pt-3">
               {/* Platform notices */}
               <div className="flex flex-col gap-2">
-                <div
-                  className="rounded-lg px-4 py-3"
-                  style={{ backgroundColor: 'var(--color-caution-bg)', border: '1px solid var(--color-caution)' }}
-                >
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
-                    <strong>macOS:</strong> may block Unblurry on first launch.
-                    Go to <strong>System Settings → Privacy & Security</strong> and click <strong>Open Anyway</strong>.
-                  </p>
-                </div>
-                <div
-                  className="rounded-lg px-4 py-3"
-                  style={{ backgroundColor: 'var(--color-caution-bg)', border: '1px solid var(--color-caution)' }}
-                >
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
-                    <strong>Windows:</strong> may show a security warning.
-                    Click <strong>More info</strong>, then <strong>Run anyway</strong>.
-                  </p>
-                </div>
+                {(platformFilter === null || platformFilter === 'mac') && (
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{ backgroundColor: 'var(--color-caution-bg)', border: '1px solid var(--color-caution)' }}
+                  >
+                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
+                      <strong>macOS:</strong> may block Unblurry on first launch.
+                      Go to <strong>System Settings → Privacy & Security</strong> and click <strong>Open Anyway</strong>.
+                    </p>
+                  </div>
+                )}
+                {(platformFilter === null || platformFilter === 'windows') && (
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{ backgroundColor: 'var(--color-caution-bg)', border: '1px solid var(--color-caution)' }}
+                  >
+                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-caution)' }}>
+                      <strong>Windows:</strong> may show a security warning.
+                      Click <strong>More info</strong>, then <strong>Run anyway</strong>.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Terms checkbox */}
@@ -578,84 +614,91 @@ export default function LandingPage() {
               </label>
 
               {/* Download buttons */}
-              <p className="mt-5 mb-2 text-[13px] font-semibold text-text-secondary">macOS</p>
-              <div className="flex gap-3">
+              {(platformFilter === null || platformFilter === 'mac') && (
+                <>
+                  <p className="mt-5 mb-2 text-[13px] font-semibold text-text-secondary">macOS</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleConfirmDownload('arm64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary-500 px-4 py-3 text-text-inverse shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-600)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-500)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        Apple Silicon
+                      </span>
+                      <span className="text-[12px] opacity-80">M1, M2, M3, M4</span>
+                    </button>
+                    <button
+                      onClick={() => handleConfirmDownload('x64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        Intel
+                      </span>
+                      <span className="text-[12px] text-text-tertiary">2020 and earlier</span>
+                    </button>
+                  </div>
+                </>
+              )}
+              {(platformFilter === null || platformFilter === 'windows') && (
+                <>
+                  <p className="mt-5 mb-2 text-[13px] font-semibold text-text-secondary">Windows</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleConfirmDownload('winX64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        Windows (64-bit)
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+              {(platformFilter === null || platformFilter === 'linux') && (
+                <>
+                  <p className="mt-5 mb-2 text-[13px] font-semibold text-text-secondary">Linux</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleConfirmDownload('linuxX64')}
+                      disabled={!termsAccepted}
+                      className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
+                      onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
+                    >
+                      <span className="flex items-center gap-2 text-[14px] font-semibold">
+                        <DownloadIcon />
+                        AppImage (64-bit)
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+              {platformFilter !== null && (
                 <button
-                  onClick={() => handleConfirmDownload('arm64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary-500 px-4 py-3 text-text-inverse shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-600)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-primary-500)'; }}
+                  onClick={() => setPlatformFilter(null)}
+                  className="mt-4 w-full text-center text-[13px] text-text-tertiary hover:text-primary-500"
+                  style={{ transition: 'var(--transition-fast)', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    Apple Silicon
-                  </span>
-                  <span className="text-[12px] opacity-80">M1, M2, M3, M4</span>
+                  Looking for another platform?
                 </button>
-                <button
-                  onClick={() => handleConfirmDownload('x64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
-                >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    Intel
-                  </span>
-                  <span className="text-[12px] text-text-tertiary">2020 and earlier</span>
-                </button>
-              </div>
-              <p className="mt-4 mb-2 text-[13px] font-semibold text-text-secondary">Windows</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleConfirmDownload('winX64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
-                >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    Windows (64-bit)
-                  </span>
-                </button>
-              </div>
-              <p className="mt-4 mb-2 text-[13px] font-semibold text-text-secondary">Linux</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleConfirmDownload('linuxX64')}
-                  disabled={!termsAccepted}
-                  className="inline-flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 text-text-primary shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ transition: 'var(--transition-fast)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                  onMouseEnter={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
-                  onMouseLeave={(e) => { if (termsAccepted) e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)'; }}
-                >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold">
-                    <DownloadIcon />
-                    AppImage (64-bit)
-                  </span>
-                </button>
-              </div>
+              )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* OS tooltip for non-macOS users */}
-      {showOsTooltip && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-fade-in">
-          <div
-            className="rounded-xl px-5 py-3 shadow-lg"
-            style={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}
-          >
-            <p className="text-[14px] font-medium text-text-primary">
-              Unblurry is available for macOS, Windows and Linux
-            </p>
           </div>
         </div>
       )}
