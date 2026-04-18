@@ -27,6 +27,8 @@ jobs:
 
       - name: Build renderer
         run: npm run build:renderer
+        env:
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
 
       - name: Prepare landing page
         run: |

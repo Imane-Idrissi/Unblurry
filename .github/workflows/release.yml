@@ -24,6 +24,7 @@ jobs:
         run: npm run build && npx electron-builder --mac --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
 
   build-windows:
     runs-on: windows-latest
@@ -43,6 +44,7 @@ jobs:
         run: npm run build && npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -62,6 +64,7 @@ jobs:
         run: npm run build && npx electron-builder --linux --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
 
   finalize:
     needs: [build-mac, build-windows, build-linux]
