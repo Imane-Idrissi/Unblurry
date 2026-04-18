@@ -110,4 +110,8 @@ contextBridge.exposeInMainWorld('api', {
   openDownloadPage: () => {
     ipcRenderer.send('updater:open-download');
   },
+
+  openExternal: (url: string) => {
+    ipcRenderer.send('shell:open-external', url);
+  },
 });

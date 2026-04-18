@@ -124,7 +124,7 @@ export default function ApiKeySetupScreen({ isChange, onComplete, onCancel }: Ap
           <p className="mt-sm text-small leading-[1.5] text-text-tertiary">
             Get your API key from{' '}
             <button
-              onClick={() => window.open('https://aistudio.google.com/apikey')}
+              onClick={() => window.api.openExternal('https://aistudio.google.com/apikey')}
               className="text-primary-500 hover:text-primary-600 underline underline-offset-2 transition-colors duration-[150ms]"
             >
               aistudio.google.com

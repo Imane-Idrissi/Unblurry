@@ -80,7 +80,7 @@ export default function IntentScreen({ onSubmit, loading, onSettings }: IntentSc
         </button>
 
         <p className="mt-md text-center text-small leading-[1.5] text-text-secondary">
-          Press <kbd className="font-mono text-caption text-text-primary">⌘ Enter</kbd> to submit
+          Press <kbd className="font-mono text-caption text-text-primary">{window.api.platform === 'darwin' ? '⌘' : 'Ctrl'} Enter</kbd> to submit
         </p>
       </div>
     </div>

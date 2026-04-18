@@ -157,6 +157,12 @@ app.whenReady().then(() => {
   ipcMain.on('updater:open-download', () => {
     shell.openExternal('https://www.unblurry.app');
   });
+  const ALLOWED_EXTERNAL_URLS = ['https://aistudio.google.com/apikey'];
+  ipcMain.on('shell:open-external', (_event, url: string) => {
+    if (ALLOWED_EXTERNAL_URLS.some(allowed => url.startsWith(allowed))) {
+      shell.openExternal(url);
+    }
+  });
 });
 
 app.on('window-all-closed', () => {

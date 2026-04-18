@@ -190,7 +190,7 @@ function ApiKeyStep({ onDone }: { onDone: () => void }) {
         <p className="mt-sm text-small leading-[1.5] text-text-secondary">
           Get your API key from{' '}
           <button
-            onClick={() => window.open('https://aistudio.google.com/apikey')}
+            onClick={() => window.api.openExternal('https://aistudio.google.com/apikey')}
             className="text-primary-500 hover:text-primary-600 underline underline-offset-2 transition-colors duration-[150ms]"
           >
             aistudio.google.com
@@ -288,7 +288,7 @@ function IntentStep({ onSubmit, loading }: { onSubmit: (name: string, intent: st
       </button>
 
       <p className="mt-md text-center text-small leading-[1.5] text-text-secondary">
-        Press <kbd className="font-mono text-caption text-text-primary">⌘ Enter</kbd> to submit
+        Press <kbd className="font-mono text-caption text-text-primary">{window.api.platform === 'darwin' ? '⌘' : 'Ctrl'} Enter</kbd> to submit
       </p>
     </>
   );
