@@ -32,11 +32,18 @@ export default function ActiveSessionScreen({
   const [showCaptureWarning, setShowCaptureWarning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef(Date.now());
+  const pausedAccumRef = useRef(0);
+  const pausedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(prev => prev + 1);
-    }, 1000);
+    const tick = () => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTimeRef.current - pausedAccumRef.current) / 1000);
+      setElapsedSeconds(elapsed);
+    };
+
+    timerRef.current = setInterval(tick, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -47,10 +54,17 @@ export default function ActiveSessionScreen({
     if (status === 'paused') {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
+      pausedAtRef.current = Date.now();
     } else {
+      if (pausedAtRef.current) {
+        pausedAccumRef.current += Date.now() - pausedAtRef.current;
+        pausedAtRef.current = null;
+      }
       if (!timerRef.current) {
         timerRef.current = setInterval(() => {
-          setElapsedSeconds(prev => prev + 1);
+          const now = Date.now();
+          const elapsed = Math.floor((now - startTimeRef.current - pausedAccumRef.current) / 1000);
+          setElapsedSeconds(elapsed);
         }, 1000);
       }
     }
