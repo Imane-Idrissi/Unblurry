@@ -322,6 +322,8 @@ export default function FloatingApp() {
           opacity: buttonIsPill ? 1 : 0,
           transition: 'opacity 150ms ease-out',
           pointerEvents: buttonIsPill ? 'auto' : 'none',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...(useNativeDrag ? { WebkitAppRegion: 'no-drag' } as any : {}),
         }}
       >
         <div
