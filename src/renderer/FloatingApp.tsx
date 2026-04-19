@@ -287,9 +287,12 @@ export default function FloatingApp() {
     )
   ) : null;
 
+  // On Linux, use native OS drag via -webkit-app-region instead of custom JS drag
+  const useNativeDrag = isLinux && buttonIsPill && viewState === 'idle';
+
   const button = (
     <button
-      onMouseDown={buttonIsPill ? handleMouseDown : undefined}
+      onMouseDown={buttonIsPill && !isLinux ? handleMouseDown : undefined}
       onClick={handleButtonClick}
       className="relative flex items-center justify-center rounded-full overflow-hidden"
       style={{
@@ -307,6 +310,8 @@ export default function FloatingApp() {
         cursor: viewState === 'confirming' ? 'default' : 'pointer',
         flexShrink: 0,
         transition: 'width 200ms ease-out, height 200ms ease-out, background 200ms ease-out, box-shadow 200ms ease-out, border 200ms ease-out',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(useNativeDrag ? { WebkitAppRegion: 'drag' } as any : {}),
       }}
     >
       {/* Pill content */}
