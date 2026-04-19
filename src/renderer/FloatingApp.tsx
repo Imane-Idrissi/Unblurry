@@ -12,6 +12,8 @@ const CONFIRMATION_DURATION = 1500;
 const DRAG_THRESHOLD = 5;
 const CARD_HEIGHT_ESTIMATE = 200;
 
+const isLinux = window.floatingApi.platform === 'linux';
+
 export default function FloatingApp() {
   const [sessionId, setSessionId] = useState('');
   const [sessionStatus, setSessionStatus] = useState<'active' | 'paused'>('active');
@@ -161,6 +163,23 @@ export default function FloatingApp() {
     if (viewState !== 'idle') return;
     isDraggingRef.current = true;
     hasDraggedRef.current = false;
+
+    if (isLinux) {
+      window.floatingApi.startDrag();
+
+      const handleMouseUp = () => {
+        isDraggingRef.current = false;
+        document.removeEventListener('mouseup', handleMouseUp);
+        window.floatingApi.stopDrag().then(({ dragged }) => {
+          hasDraggedRef.current = dragged;
+          setTimeout(() => { hasDraggedRef.current = false; }, 0);
+        });
+      };
+
+      document.addEventListener('mouseup', handleMouseUp);
+      return;
+    }
+
     dragStartRef.current = { x: e.screenX, y: e.screenY };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {

@@ -13,6 +13,9 @@ const MARGIN = 24;
 export class FloatingWindowManager {
   private win: BrowserWindow | null = null;
   private state: FloatingState | null = null;
+  private dragInterval: ReturnType<typeof setInterval> | null = null;
+  private dragCursor: { x: number; y: number } | null = null;
+  private dragMoved = false;
 
   constructor() {
     this.registerHandlers();
@@ -117,6 +120,46 @@ export class FloatingWindowManager {
       const newY = Math.max(0, Math.min(y + deltaY, screenHeight - winHeight));
 
       this.win.setPosition(newX, newY);
+    });
+
+    ipcMain.on('floating:start-drag', () => {
+      if (!this.win) return;
+      const cursor = screen.getCursorScreenPoint();
+      this.dragCursor = { x: cursor.x, y: cursor.y };
+      this.dragMoved = false;
+
+      this.dragInterval = setInterval(() => {
+        if (!this.win || !this.dragCursor) return;
+        const cursor = screen.getCursorScreenPoint();
+        const deltaX = cursor.x - this.dragCursor.x;
+        const deltaY = cursor.y - this.dragCursor.y;
+
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+          this.dragMoved = true;
+        }
+
+        if (this.dragMoved) {
+          const [x, y] = this.win.getPosition();
+          const primaryDisplay = screen.getPrimaryDisplay();
+          const { width: screenWidth, height: screenHeight } = primaryDisplay.size;
+          const [winWidth, winHeight] = this.win.getSize();
+          const newX = Math.max(0, Math.min(x + deltaX, screenWidth - winWidth));
+          const newY = Math.max(0, Math.min(y + deltaY, screenHeight - winHeight));
+          this.win.setPosition(newX, newY);
+          this.dragCursor = { x: cursor.x, y: cursor.y };
+        }
+      }, 16);
+    });
+
+    ipcMain.handle('floating:stop-drag', () => {
+      if (this.dragInterval) {
+        clearInterval(this.dragInterval);
+        this.dragInterval = null;
+      }
+      const dragged = this.dragMoved;
+      this.dragCursor = null;
+      this.dragMoved = false;
+      return { dragged };
     });
 
     ipcMain.on('floating:dismissed', () => {

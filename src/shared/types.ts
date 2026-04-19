@@ -286,11 +286,14 @@ export interface FloatingWindowState {
 }
 
 export interface FloatingAPI {
+  platform: string;
   feelingCreate: (req: FeelingCreateRequest) => Promise<FeelingCreateResponse>;
   getSessionState: () => Promise<FloatingWindowState>;
   onSessionStateChange: (callback: (state: { status: 'active' | 'paused' | 'ended' }) => void) => void;
   resize: (width: number, height: number, growDirection?: 'up' | 'down') => void;
   move: (deltaX: number, deltaY: number) => void;
+  startDrag: () => void;
+  stopDrag: () => Promise<{ dragged: boolean }>;
   dismissed: () => void;
   setIgnoreMouse: (ignore: boolean) => void;
 }
