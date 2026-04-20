@@ -34,6 +34,8 @@ import type {
   CaptureGetInRangeResponse,
   DashboardGetSessionsRequest,
   DashboardSession,
+  SessionResumeInterruptedRequest,
+  SessionResumeInterruptedResponse,
 } from '../../shared/types';
 import { CaptureRepository } from '../database/capture-repository';
 
@@ -231,12 +233,26 @@ export function registerSessionHandlers(
 
   ipcMain.handle('session:check-stale', async (): Promise<SessionCheckStaleResponse> => {
     reportService.markStaleAsFailedOnLaunch();
-    const result = sessionService.checkStaleOnLaunch();
     hideTray();
     floatingWindowManager.destroy();
-    if (result) {
-      reportService.startGeneration(result.session_id);
-      return { ended_session: result };
+
+    const interrupted = sessionService.findInterruptedOnLaunch();
+    if (interrupted && interrupted.final_intent) {
+      return {
+        interrupted_session: {
+          session_id: interrupted.session_id,
+          name: interrupted.name,
+          final_intent: interrupted.final_intent,
+          started_at: interrupted.started_at!,
+          status: interrupted.status as 'active' | 'paused',
+        },
+      };
+    }
+
+    if (interrupted) {
+      const summary = sessionService.endSession(interrupted.session_id, 'auto');
+      reportService.startGeneration(interrupted.session_id);
+      return { ended_session: { session_id: interrupted.session_id, summary } };
     }
 
     const resumable = sessionService.findResumableSession();
@@ -250,6 +266,25 @@ export function registerSessionHandlers(
     }
 
     return {};
+  });
+
+  ipcMain.handle('session:resume-interrupted', async (_event, req: SessionResumeInterruptedRequest): Promise<SessionResumeInterruptedResponse> => {
+    try {
+      const result = await sessionService.resumeInterruptedSession(req.session_id);
+      const status = result.status;
+      if (status === 'active') {
+        showTray('recording', req.session_id, trayActions, getMainWindow);
+      } else {
+        showTray('paused', req.session_id, trayActions, getMainWindow);
+      }
+      floatingWindowManager.create(req.session_id, status);
+      return { success: true, status };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
+    }
   });
 
   ipcMain.handle('session:delete', async (_event, req: SessionDeleteRequest): Promise<SessionDeleteResponse> => {

@@ -175,6 +175,23 @@ export interface SessionCheckStaleResponse {
     session_id: string;
     final_intent: string;
   };
+  interrupted_session?: {
+    session_id: string;
+    name: string;
+    final_intent: string;
+    started_at: string;
+    status: 'active' | 'paused';
+  };
+}
+
+export interface SessionResumeInterruptedRequest {
+  session_id: string;
+}
+
+export interface SessionResumeInterruptedResponse {
+  success: boolean;
+  status?: 'active' | 'paused';
+  error?: string;
 }
 
 export interface FeelingCreateRequest {
@@ -264,6 +281,7 @@ export interface ElectronAPI {
   sessionResume: (req: SessionResumeRequest) => Promise<SessionResumeResponse>;
   sessionEnd: (req: SessionEndRequest) => Promise<SessionEndResponse>;
   sessionCheckStale: () => Promise<SessionCheckStaleResponse>;
+  sessionResumeInterrupted: (req: SessionResumeInterruptedRequest) => Promise<SessionResumeInterruptedResponse>;
   reportGet: (req: ReportGetRequest) => Promise<ReportGetResponse>;
   reportRetry: (req: ReportRetryRequest) => Promise<ReportRetryResponse>;
   captureGetInRange: (req: CaptureGetInRangeRequest) => Promise<CaptureGetInRangeResponse>;

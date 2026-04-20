@@ -13,7 +13,7 @@ import ReportGeneratingScreen from './screens/ReportGeneratingScreen';
 import ReportScreen from './screens/ReportScreen';
 import ReportFailedScreen from './screens/ReportFailedScreen';
 import ReportQuotaExhaustedScreen from './screens/ReportQuotaExhaustedScreen';
-import type { SessionSummary } from '../shared/types';
+import type { SessionSummary, SessionCheckStaleResponse } from '../shared/types';
 
 type FlowStep =
   | { type: 'loading' }
@@ -37,6 +37,7 @@ export default function App() {
   const [step, setStep] = useState<FlowStep>({ type: 'loading' });
   const [loading, setLoading] = useState(false);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [interruptedSession, setInterruptedSession] = useState<SessionCheckStaleResponse['interrupted_session'] | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -51,6 +52,11 @@ export default function App() {
             sessionId: result.ended_session.session_id,
             summary: result.ended_session.summary,
           });
+          return;
+        }
+        if (result.interrupted_session) {
+          setInterruptedSession(result.interrupted_session);
+          setStep({ type: 'dashboard' });
           return;
         }
         if (result.resumable_session) {
@@ -267,7 +273,29 @@ export default function App() {
     setStep({ type: 'report-generating', sessionId, summary });
   };
 
+  const handleResumeInterrupted = async () => {
+    if (!interruptedSession) return;
+    const { session_id, final_intent } = interruptedSession;
+    const response = await window.api.sessionResumeInterrupted({ session_id });
+    if (response.success) {
+      track('session_resumed_after_interruption');
+      setInterruptedSession(null);
+      setStep({ type: 'active-session', sessionId: session_id, finalIntent: final_intent });
+    }
+  };
+
+  const handleEndInterrupted = async () => {
+    if (!interruptedSession) return;
+    const { session_id } = interruptedSession;
+    const response = await window.api.sessionEnd({ session_id });
+    if (response.success && response.summary) {
+      setInterruptedSession(null);
+      setStep({ type: 'report-generating', sessionId: session_id, summary: response.summary });
+    }
+  };
+
   const goToDashboard = () => {
+    setInterruptedSession(null);
     setStep({ type: 'dashboard' });
   };
 
@@ -288,6 +316,9 @@ export default function App() {
           onSessionClick={(sessionId) => setStep({ type: 'view-report', sessionId })}
           theme={theme}
           onToggleTheme={toggleTheme}
+          interruptedSession={interruptedSession}
+          onResumeInterrupted={handleResumeInterrupted}
+          onEndInterrupted={handleEndInterrupted}
         />
       );
 

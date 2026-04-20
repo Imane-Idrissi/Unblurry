@@ -20,6 +20,8 @@ import type {
   SessionDeleteRequest,
   SessionDeleteResponse,
   SessionCheckStaleResponse,
+  SessionResumeInterruptedRequest,
+  SessionResumeInterruptedResponse,
   SessionSummary,
   ReportGetRequest,
   ReportGetResponse,
@@ -67,6 +69,9 @@ contextBridge.exposeInMainWorld('api', {
 
   sessionCheckStale: (): Promise<SessionCheckStaleResponse> =>
     ipcRenderer.invoke('session:check-stale'),
+
+  sessionResumeInterrupted: (req: SessionResumeInterruptedRequest): Promise<SessionResumeInterruptedResponse> =>
+    ipcRenderer.invoke('session:resume-interrupted', req),
 
   reportGet: (req: ReportGetRequest): Promise<ReportGetResponse> =>
     ipcRenderer.invoke('report:get', req),

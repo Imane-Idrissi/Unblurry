@@ -116,6 +116,33 @@ export class SessionService {
     return mostRecent;
   }
 
+  findInterruptedOnLaunch(): Session | null {
+    this.captureService.stop();
+    const staleSessions = this.repo.findByStatuses(['active', 'paused']);
+    if (staleSessions.length === 0) return null;
+
+    for (let i = 1; i < staleSessions.length; i++) {
+      this.repo.endSession(staleSessions[i].session_id, 'auto');
+    }
+
+    return staleSessions[0];
+  }
+
+  async resumeInterruptedSession(sessionId: string): Promise<{ success: boolean; status: 'active' | 'paused' }> {
+    const session = this.getSessionOrThrow(sessionId);
+    if (session.status !== 'active' && session.status !== 'paused') {
+      throw new Error(`Session is not interrupted: ${session.status}`);
+    }
+
+    if (session.status === 'active') {
+      if (await this.captureService.checkPermission()) {
+        this.captureService.start(sessionId);
+      }
+    }
+
+    return { success: true, status: session.status as 'active' | 'paused' };
+  }
+
   cleanupAbandoned(): number {
     return this.repo.deleteAbandonedCreated();
   }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { DashboardSession } from '../../shared/types';
+import type { DashboardSession, SessionCheckStaleResponse } from '../../shared/types';
 import { UnblurryLogo } from '../components/UnblurryLogo';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -9,6 +9,9 @@ interface DashboardScreenProps {
   onSessionClick: (sessionId: string) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  interruptedSession?: SessionCheckStaleResponse['interrupted_session'] | null;
+  onResumeInterrupted?: () => void;
+  onEndInterrupted?: () => void;
 }
 
 export default function DashboardScreen({
@@ -17,6 +20,9 @@ export default function DashboardScreen({
   onSessionClick,
   theme,
   onToggleTheme,
+  interruptedSession,
+  onResumeInterrupted,
+  onEndInterrupted,
 }: DashboardScreenProps) {
   const PAGE_SIZE = 20;
   const [sessions, setSessions] = useState<DashboardSession[]>([]);
@@ -147,6 +153,38 @@ export default function DashboardScreen({
               Start New Session
             </button>
           </div>
+
+          {/* Interrupted session */}
+          {interruptedSession && (
+            <div className="mb-xl rounded-lg border border-caution/40 bg-caution-bg px-lg py-lg shadow-sm">
+              <div className="flex items-center gap-sm mb-sm">
+                <svg className="h-4 w-4 text-caution" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                </svg>
+                <p className="text-body font-semibold text-text-primary">Session interrupted</p>
+              </div>
+              <p className="text-small leading-[1.5] text-text-secondary mb-sm">
+                <span className="font-medium text-text-primary">{interruptedSession.name}</span> was still running when the app closed.
+              </p>
+              <p className="text-small leading-[1.5] text-text-tertiary mb-md">
+                Started {formatDate(interruptedSession.started_at)}
+              </p>
+              <div className="flex gap-sm">
+                <button
+                  onClick={onResumeInterrupted}
+                  className="flex-1 rounded-md bg-primary-500 px-lg py-[10px] text-small font-medium text-text-inverse shadow-sm transition-all duration-[150ms] ease-out hover:bg-primary-600 active:bg-primary-700"
+                >
+                  Resume Session
+                </button>
+                <button
+                  onClick={onEndInterrupted}
+                  className="flex-1 rounded-md border border-border bg-bg-elevated px-lg py-[10px] text-small font-medium text-text-secondary shadow-sm transition-colors duration-[150ms] ease-out hover:bg-bg-secondary"
+                >
+                  End & Get Report
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Sessions */}
           <section>
