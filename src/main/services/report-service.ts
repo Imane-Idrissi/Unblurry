@@ -34,14 +34,14 @@ export class ReportService {
       return { status: 'generating' };
     }
 
-    if (report.status === 'generating' || report.status === 'failed') {
-      return { status: report.status };
+    if (report.status === 'generating') {
+      return { status: 'generating' };
     }
 
     const session = this.sessionRepo.getById(sessionId);
 
-    if (report.status === 'quota_exhausted') {
-      if (!session) return { status: 'quota_exhausted' };
+    if (report.status === 'failed' || report.status === 'quota_exhausted') {
+      if (!session) return { status: report.status };
       const events = this.eventsRepo.getBySessionId(sessionId);
       const totalMinutes = session.started_at
         ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
@@ -49,7 +49,7 @@ export class ReportService {
       const activeMinutes = this.calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
       const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
       return {
-        status: 'quota_exhausted',
+        status: report.status,
         session: {
           name: session.name,
           intent: session.final_intent || session.original_intent,

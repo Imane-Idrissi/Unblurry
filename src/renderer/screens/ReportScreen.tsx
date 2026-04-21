@@ -116,6 +116,7 @@ export default function ReportScreen({
 
   const report = skipped ? null : data?.report;
   const isQuotaExhausted = !skipped && data?.status === 'quota_exhausted';
+  const isFailed = !skipped && data?.status === 'failed';
 
   return (
     <div className="min-h-screen bg-bg-primary">
@@ -216,6 +217,36 @@ export default function ReportScreen({
                     className="rounded-md bg-primary-500 px-lg py-sm text-small font-medium text-text-inverse shadow-sm transition-all duration-[150ms] ease-out hover:bg-primary-600 hover:shadow-md active:bg-primary-700 disabled:bg-primary-200 disabled:text-primary-600 disabled:shadow-none disabled:cursor-not-allowed"
                   >
                     {retrying ? 'Generating...' : 'Generate Report'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Report generation failed */}
+        {isFailed && (
+          <section className="mb-2xl">
+            <div className="rounded-lg border border-negative/30 bg-negative-bg px-lg py-lg shadow-sm">
+              <div className="flex items-start gap-md">
+                <div className="shrink-0 mt-[2px]">
+                  <svg className="h-5 w-5 text-negative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-body font-medium text-text-primary mb-xs">
+                    Report generation failed
+                  </p>
+                  <p className="text-small leading-[1.6] text-text-secondary mb-md">
+                    Your session data is safely saved. You can try generating the report again.
+                  </p>
+                  <button
+                    onClick={handleRetryQuota}
+                    disabled={retrying}
+                    className="rounded-md bg-primary-500 px-lg py-sm text-small font-medium text-text-inverse shadow-sm transition-all duration-[150ms] ease-out hover:bg-primary-600 hover:shadow-md active:bg-primary-700 disabled:bg-primary-200 disabled:text-primary-600 disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    {retrying ? 'Generating...' : 'Retry Report'}
                   </button>
                 </div>
               </div>

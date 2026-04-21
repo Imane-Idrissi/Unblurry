@@ -333,6 +333,11 @@ function SessionCard({ session, onClick, onDelete }: { session: DashboardSession
               Report pending
             </span>
           )}
+          {session.report_status === 'failed' && (
+            <span className="shrink-0 inline-flex items-center rounded-sm bg-negative-bg px-sm py-[1px] text-caption font-medium text-negative">
+              Report failed
+            </span>
+          )}
         </div>
         <p className="text-small leading-[1.5] text-text-tertiary mt-xs">
           {date}
