@@ -313,7 +313,11 @@ export function registerSessionHandlers(
   });
 
   ipcMain.handle('report:get', async (_event, req: ReportGetRequest): Promise<ReportGetResponse> => {
-    return reportService.getReport(req.session_id);
+    try {
+      return reportService.getReport(req.session_id);
+    } catch {
+      return { status: 'failed' };
+    }
   });
 
   ipcMain.handle('report:retry', async (_event, req: ReportRetryRequest): Promise<ReportRetryResponse> => {
