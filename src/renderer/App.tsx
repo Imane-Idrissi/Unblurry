@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
-import { initAnalytics, initErrorTracking, track, incrementSessionCount } from './analytics';
+import { initAnalytics, track, incrementSessionCount } from './analytics';
 import ThemeToggle from './components/ThemeToggle';
 import DashboardScreen from './screens/DashboardScreen';
 import ApiKeySetupScreen from './screens/ApiKeySetupScreen';
@@ -42,7 +42,6 @@ export default function App() {
 
   useEffect(() => {
     initAnalytics();
-    initErrorTracking();
 
     const initialize = async () => {
       try {
