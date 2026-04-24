@@ -5,6 +5,7 @@ const STORAGE_KEY_ANON_ID = 'unblurry-anon-id';
 const STORAGE_KEY_SESSION_COUNT = 'unblurry-session-count';
 
 let initialized = false;
+let errorTrackingInitialized = false;
 
 export function initAnalytics() {
   if (!POSTHOG_KEY || initialized) return;
@@ -27,6 +28,31 @@ export function initAnalytics() {
 export function track(event: string, properties?: Record<string, unknown>) {
   if (!POSTHOG_KEY || !initialized) return;
   posthog.capture(event, properties);
+}
+
+export function captureError(error: unknown, context?: string) {
+  if (!POSTHOG_KEY || !initialized) return;
+
+  const err = error instanceof Error ? error : new Error(String(error));
+  posthog.capture('$exception', {
+    $exception_type: err.name,
+    $exception_message: err.message,
+    $exception_stack_trace_raw: err.stack?.slice(0, 2000),
+    ...(context ? { context } : {}),
+  });
+}
+
+export function initErrorTracking() {
+  if (!POSTHOG_KEY || errorTrackingInitialized) return;
+  errorTrackingInitialized = true;
+
+  window.addEventListener('error', (event) => {
+    captureError(event.error ?? event.message, 'uncaught_error');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    captureError(event.reason, 'unhandled_rejection');
+  });
 }
 
 export function incrementSessionCount(): number {
