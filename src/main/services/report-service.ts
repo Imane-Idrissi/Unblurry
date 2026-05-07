@@ -4,7 +4,8 @@ import { CaptureRepository } from '../database/capture-repository';
 import { FeelingRepository } from '../database/feeling-repository';
 import { SessionEventsRepository } from '../database/session-events-repository';
 import { AiService, AiServiceError, collapseCaptures, buildReportPrompt, parseReportResponse } from './ai-service';
-import type { ReportGetResponse, SessionEvent } from '../../shared/types';
+import type { ReportGetResponse, Session, SessionEvent } from '../../shared/types';
+import { calculateActiveMinutes } from '../../shared/session-time';
 
 export class ReportService {
   constructor(
@@ -42,12 +43,7 @@ export class ReportService {
 
     if (report.status === 'failed' || report.status === 'quota_exhausted') {
       if (!session) return { status: report.status };
-      const events = this.eventsRepo.getBySessionId(sessionId);
-      const totalMinutes = session.started_at
-        ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
-        : 0;
-      const activeMinutes = this.calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
-      const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
+      const { totalMinutes, activeMinutes, pausedMinutes } = this.computeSessionMinutes(session);
       return {
         status: report.status,
         session: {
@@ -63,12 +59,7 @@ export class ReportService {
       return { status: 'failed' };
     }
 
-    const events = this.eventsRepo.getBySessionId(sessionId);
-    const totalMinutes = session.started_at
-      ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
-      : 0;
-    const activeMinutes = this.calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
-    const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
+    const { totalMinutes, activeMinutes, pausedMinutes } = this.computeSessionMinutes(session);
 
     const parsed = parseReportResponse(
       JSON.stringify({
@@ -138,13 +129,7 @@ export class ReportService {
 
         const captures = this.captureRepo.getBySessionId(sessionId);
         const feelings = this.feelingRepo.getBySessionId(sessionId);
-        const events = this.eventsRepo.getBySessionId(sessionId);
-
-        const totalMinutes = session.started_at
-          ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
-          : 0;
-        const activeMinutes = this.calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
-        const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
+        const { events, totalMinutes, activeMinutes, pausedMinutes } = this.computeSessionMinutes(session);
 
         const collapsed = collapseCaptures(captures);
 
@@ -179,29 +164,18 @@ export class ReportService {
     })();
   }
 
-  private calculateActiveMinutes(startedAt: string | null, events: SessionEvent[], endTime?: string): number {
-    if (!startedAt) return 0;
-
-    let activeMs = 0;
-    let activeSpanStart = new Date(startedAt).getTime();
-    let isActive = true;
-
-    for (const event of events) {
-      const eventTime = new Date(event.created_at).getTime();
-      if (event.event_type === 'paused' && isActive) {
-        activeMs += eventTime - activeSpanStart;
-        isActive = false;
-      } else if (event.event_type === 'resumed' && !isActive) {
-        activeSpanStart = eventTime;
-        isActive = true;
-      }
-    }
-
-    if (isActive) {
-      const end = endTime ? new Date(endTime).getTime() : Date.now();
-      activeMs += end - activeSpanStart;
-    }
-
-    return activeMs / 60000;
+  private computeSessionMinutes(session: Session): {
+    events: SessionEvent[];
+    totalMinutes: number;
+    activeMinutes: number;
+    pausedMinutes: number;
+  } {
+    const events = this.eventsRepo.getBySessionId(session.session_id);
+    const totalMinutes = session.started_at
+      ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
+      : 0;
+    const activeMinutes = calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
+    const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
+    return { events, totalMinutes, activeMinutes, pausedMinutes };
   }
 }

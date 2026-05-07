@@ -3,7 +3,8 @@ import { SessionEventsRepository } from '../database/session-events-repository';
 import { CaptureRepository } from '../database/capture-repository';
 import { FeelingRepository } from '../database/feeling-repository';
 import { CaptureService } from './capture-service';
-import { Session, SessionEvent, Feeling } from '../../shared/types';
+import { Session, Feeling } from '../../shared/types';
+import { calculateActiveMinutes } from '../../shared/session-time';
 
 export interface SessionSummary {
   total_minutes: number;
@@ -92,7 +93,7 @@ export class SessionService {
     const session = this.getSessionOrThrow(sessionId);
     if (!session.started_at) return 0;
     const events = this.eventsRepo.getBySessionId(sessionId);
-    return this.calculateActiveMinutes(session, events);
+    return calculateActiveMinutes(session.started_at, events);
   }
 
   hasActiveSession(): boolean {
@@ -205,7 +206,7 @@ export class SessionService {
       ? (new Date(session.ended_at || new Date().toISOString()).getTime() - new Date(session.started_at).getTime()) / 60000
       : 0;
 
-    const activeMinutes = this.calculateActiveMinutes(session, events, session.ended_at || undefined);
+    const activeMinutes = calculateActiveMinutes(session.started_at, events, session.ended_at || undefined);
     const pausedMinutes = Math.max(0, totalMinutes - activeMinutes);
 
     return {
@@ -215,31 +216,5 @@ export class SessionService {
       capture_count: this.captureRepo.countBySessionId(sessionId),
       feeling_count: this.feelingRepo.countBySessionId(sessionId),
     };
-  }
-
-  private calculateActiveMinutes(session: Session, events: SessionEvent[], endTime?: string): number {
-    if (!session.started_at) return 0;
-
-    let activeMs = 0;
-    let activeSpanStart = new Date(session.started_at).getTime();
-    let isActive = true;
-
-    for (const event of events) {
-      const eventTime = new Date(event.created_at).getTime();
-      if (event.event_type === 'paused' && isActive) {
-        activeMs += eventTime - activeSpanStart;
-        isActive = false;
-      } else if (event.event_type === 'resumed' && !isActive) {
-        activeSpanStart = eventTime;
-        isActive = true;
-      }
-    }
-
-    if (isActive) {
-      const end = endTime ? new Date(endTime).getTime() : Date.now();
-      activeMs += end - activeSpanStart;
-    }
-
-    return activeMs / 60000;
   }
 }
